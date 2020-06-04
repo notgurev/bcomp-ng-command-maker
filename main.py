@@ -41,13 +41,8 @@ bits = {
     # Организация ввода-вывода
     'IO': 34,
     'IRQS': 35,
-    # Резервные сигналы
-    'no idea what to write there': 36,
-    'should not be possible to write this anyway': 37,
     # Останов БЭВМ
     'HALT': 38,
-    # Работа с памятью
-    'TYPE': 39
 }
 
 
@@ -61,7 +56,7 @@ def mnemonics_to_bits(mnemonics_list):
 
 def bits_to_hex(bit_line):
     # костыль потому что у меня нет времени разбираться как нормально сделать
-    return str(hex(int(bit_line, 2)))[2:]
+    return str(hex(int(bit_line, 2)))[2:].upper()
 
 
 def operational(line_split):
@@ -69,26 +64,22 @@ def operational(line_split):
     return bits_to_hex(mnemonics_to_bits(line_split)).zfill(10)
 
 
-b = {  # у меня мозг не работает, потом нормально сделаю
-    '0': '00',
-    '1': '02',
-    '2': '04',
-    '3': '08',
-    '4': '10',
-    '5': '20',
-    '6': '40',
-    '7': '80'
-}
-
-
 def control(line_split):
     line_split.pop(0)  # удаляем control
     command_hex = '8' + line_split.pop(0)  # код операции + резерв + однобитовое поле сравнения (COMP)
     command_hex = command_hex + line_split.pop(0)  # hex адрес перехода
     # поле выбора проверяемого бита (8 бит) из коммутатора, от 0 до 7
-    command_hex = command_hex + b.get(line_split.pop(0))
+    checked_bits_decimal = line_split.pop(0).split(',')  # проверяемые биты (несколько)
+    checked_bits_binary = ''
+    for bit in range(7, -1, -1):
+        checked_bits_binary = checked_bits_binary + ('1' if str(bit) in checked_bits_decimal else '0')
+    command_hex = command_hex + bits_to_hex(checked_bits_binary)
     command_hex = command_hex + bits_to_hex(mnemonics_to_bits(line_split))  # мнемоники
     return command_hex
+
+
+def unconditional(address):
+    return '80' + address + '101040'
 
 
 print("""
@@ -99,17 +90,23 @@ print("""
 
 Синтаксис микрокоманд (мнемоники вводятся через пробел):
 Операционная: oper [мнемоники]
-Управляющая:  control {значение COMP 1/0} {hex адрес перехода} {decimal поле выбора проверяемого бита (8бит) из коммутатора} [мнемоники]
+Управляющая:  control/ctrl {значение COMP 1/0} {hex адрес перехода} {decimal выбранные проверяемые биты (0-7) из коммутатора} [мнемоники]
+
+Дополнительные примочки:
+Безусловный переход: jump {hex адрес перехода} (эквивалент ctrl 0 ADDR 4 RDPS LTOL)
 """)
 
 with open('input.txt', 'r', encoding='utf-8') as lines:
     for line in lines:
         line_split = line.upper().strip().split(' ')
+        keyword = line_split[0]
         try:
-            if line_split[0] == 'OPER':
+            if keyword == 'OPER':
                 print(operational(line_split))
-            elif line_split[0] == 'CONTROL':
+            elif keyword == 'CONTROL' or keyword == 'CTRL':
                 print(control(line_split))
+            elif keyword == 'JUMP':
+                print(unconditional(line_split[1]))
             else:
                 print('Неправильное ключевое слово в строке: ' + line)
         except:

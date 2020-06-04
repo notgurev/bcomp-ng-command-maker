@@ -49,3 +49,30 @@ bits = {
     # Работа с памятью
     'TYPE': 39
 }
+
+control_unique_bits = {
+    'COMP'
+}
+
+
+def mnemonics_to_bits(mnemonics_list):
+    this_lines_bits = sorted(list(map(bits.get, mnemonics_list)), reverse=True)
+    command_binary = ''
+    for bit in range(39, -1, -1):
+        command_binary = command_binary + ('1' if bit in this_lines_bits else '0')
+    return command_binary
+
+
+def bits_to_hex(bit_line):
+    # костыль потому что у меня нет времени разбираться как нормально сделать
+    return str(hex(int(bit_line, 2)))[2:].zfill(10)
+
+
+print("""
+Синтаксис микрокоманд (мнемоники вводятся через пробел):
+Операционная: oper [мнемоники]
+Управляющая:  control {значение COMP} {адрес перехода} {поле выбора проверяемого бита (8бит) из коммутатора} [мнемоники]
+""")
+with open('input.txt', 'r', encoding='utf-8') as lines:
+    for line in lines:
+        print(bits_to_hex(mnemonics_to_bits(line.upper().strip().split(' '))))

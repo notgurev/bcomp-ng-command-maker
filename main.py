@@ -50,10 +50,6 @@ bits = {
     'TYPE': 39
 }
 
-control_unique_bits = {
-    'COMP'
-}
-
 
 def mnemonics_to_bits(mnemonics_list):
     this_lines_bits = sorted(list(map(bits.get, mnemonics_list)), reverse=True)
@@ -65,14 +61,53 @@ def mnemonics_to_bits(mnemonics_list):
 
 def bits_to_hex(bit_line):
     # костыль потому что у меня нет времени разбираться как нормально сделать
-    return str(hex(int(bit_line, 2)))[2:].zfill(10)
+    return str(hex(int(bit_line, 2)))[2:]
+
+
+def operational(line_split):
+    line_split.pop(0)  # удаляем oper
+    return bits_to_hex(mnemonics_to_bits(line_split)).zfill(10)
+
+
+b = {  # у меня мозг не работает, потом нормально сделаю
+    '0': '00',
+    '1': '02',
+    '2': '04',
+    '3': '08',
+    '4': '10',
+    '5': '20',
+    '6': '40',
+    '7': '80'
+}
+
+
+def control(line_split):
+    line_split.pop(0)  # удаляем control
+    command_hex = '8' + line_split.pop(0)  # код операции + резерв + однобитовое поле сравнения (COMP)
+    command_hex = command_hex + line_split.pop(0)  # hex адрес перехода
+    # поле выбора проверяемого бита (8 бит) из коммутатора, от 0 до 7
+    command_hex = command_hex + b.get(line_split.pop(0))
+    command_hex = command_hex + bits_to_hex(mnemonics_to_bits(line_split))  # мнемоники
+    return command_hex
 
 
 print("""
+ВНИМАНИЕ! Скрипт не проверяет почти никакие ошибки. 
+Возможные опечатки: несуществующая мнемоника, отсутствие пробела/ключевого слова/неправильный формат введенного числа.
+Скрипт может либо крашнуться, либо вообще не дать знать об ошибке.
+Сори, у меня не было времени всё предусмотреть.
+
 Синтаксис микрокоманд (мнемоники вводятся через пробел):
 Операционная: oper [мнемоники]
-Управляющая:  control {значение COMP} {адрес перехода} {поле выбора проверяемого бита (8бит) из коммутатора} [мнемоники]
+Управляющая:  control {значение COMP 1/0} {hex адрес перехода} {decimal поле выбора проверяемого бита (8бит) из коммутатора} [мнемоники]
 """)
+
 with open('input.txt', 'r', encoding='utf-8') as lines:
     for line in lines:
-        print(bits_to_hex(mnemonics_to_bits(line.upper().strip().split(' '))))
+        line_split = line.upper().strip().split(' ')
+        if line_split[0] == 'OPER':
+            print(operational(line_split))
+        elif line_split[0] == 'CONTROL':
+            print(control(line_split))
+        else:
+            print('ERROR')

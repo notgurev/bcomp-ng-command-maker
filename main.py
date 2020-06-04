@@ -105,9 +105,12 @@ print("""
 with open('input.txt', 'r', encoding='utf-8') as lines:
     for line in lines:
         line_split = line.upper().strip().split(' ')
-        if line_split[0] == 'OPER':
-            print(operational(line_split))
-        elif line_split[0] == 'CONTROL':
-            print(control(line_split))
-        else:
-            print('ERROR')
+        try:
+            if line_split[0] == 'OPER':
+                print(operational(line_split))
+            elif line_split[0] == 'CONTROL':
+                print(control(line_split))
+            else:
+                print('Неправильное ключевое слово в строке: ' + line)
+        except:
+            print('Где-то тут ошибка:' + line)
